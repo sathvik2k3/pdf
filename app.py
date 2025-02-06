@@ -41,7 +41,12 @@ def generate_pdf():
                 else:
                     quantity = 0  
                 total_quantity += quantity
-                details_rows += f"<tr><td>{count}</td><td>{d['name']}</td><td>{d['number']}</td>" \
+                nsdc0=""
+                if d["name"]=="Unnamed":
+                    nsdc0="-"
+                else:
+                    nsdc0=d["name"]
+                details_rows += f"<tr><td>{count}</td><td>{nsdc0}</td><td>{d['number']}</td>" \
                                 f"<td>{d['length']}</td><td>{d['breadth']}</td><td>{d['depth']}</td>" \
                                 f"<td>{quantity:.2f}</td><td>-</td><td>-</td></tr>"                                
             
@@ -66,7 +71,12 @@ def generate_pdf():
                 else:
                     quantity = 0
                 reduction_quantity += quantity
-                details_rows += f"<tr><td>{count}</td><td>{r['name']}</td><td>{r['number']}</td>" \
+                nsdc1=""
+                if r["name"]=="Unnamed":
+                    nsdc1="-"
+                else:
+                    nsdc1=r["name"]
+                details_rows += f"<tr><td>{count}</td><td>{nsdc1}</td><td>{r['number']}</td>" \
                                    f"<td>{r['length']}</td><td>{r['breadth']}</td><td>{r['depth']}</td>" \
                                    f"<td>{quantity:.2f}</td><td>-</td><td>-</td></tr>"
             details_rows += f"<tr><td colspan='6' style='text-align: center;'>-</td>" \
@@ -82,8 +92,11 @@ def generate_pdf():
            
             total_cost = net_quantity * rate
             grand_total += total_cost
-            gt = f"{grand_total:.2f}"
-            GrandInWords=num2words(gt)
+            # gt = f"{grand_total}"
+            # GrandInWords=num2words(gt)
+            gt = str(grand_total)  # Convert to string
+            whole_number = int(float(gt))  # Convert to float first, then to integer to remove decimals
+            GrandInWords = num2words(whole_number) 
             details_rows += f"<tr><td colspan='6' style='text-align: center;'>Total</td>" \
                    f"<td><strong>{(net_quantity):.2f}</strong></td><td><strong>{rate} Rs. / {unit}</strong></td><td><strong>Rs. {(net_quantity) * rate:.2f}</strong></td></tr>"
 
@@ -138,7 +151,6 @@ def generate_pdf():
         </head>
         <body>
             <h1>{project}</h1>
-            <span>ABC Company </span>
             <p><strong>Project Name:</strong> {project}</p>
             <p><strong>Client Name:</strong> {client_name}</p>
             <p><strong>Date:</strong> {datetime.now().strftime('%Y-%m-%d')}</p>
@@ -174,6 +186,7 @@ def generate_pdf_subwork():
     project_name = payload.get("project", "N/A")
     client_name = payload.get("clientName", "N/A")
     work = payload.get("work", "N/A")
+    nameofsubwork=payload.get("nameofsubwork","N/A")
     subworks = payload.get("subworks", {})
     details = subworks.get("details", [])
     default_value = subworks.get("default", {})
@@ -205,11 +218,16 @@ def generate_pdf_subwork():
         total = rate * quantity
         total_quantity += quantity
         grand_total += total
-
+        nsnamne="-"
+        if subwork.get('name')=="Unnamed":
+            nsnamne="-"
+        else:
+            nsnamne=subwork.get('name')
         details_rows += f"""
+
             <tr>
                 <td>{idx}</td>
-                <td>{subwork.get('name', 'Unnamed')}</td>
+                <td>{nsnamne}</td>
                 <td>{subwork.get('number', 0)}</td>
                 <td>{subwork.get('length', 0)}</td>
                 <td>{subwork.get('breadth', 0)}</td>
@@ -250,10 +268,16 @@ def generate_pdf_subwork():
         total = rate * quantity
         reduction_quantity += quantity
         grand_total += total
+        nsnamne1="-"
+        if subwork.get('name')=="Unnamed":
+            nsnamne1="-"
+        else:
+            nsnamne1=subwork.get('name')
+
         details_rows += f"""
             <tr>
                 <td>{idx}</td>
-                <td>{subwork.get('name', 'Unnamed')}</td>
+                <td>{nsnamne1}</td>
                 <td>{subwork.get('number', 0)}</td>
                 <td>{subwork.get('length', 0)}</td>
                 <td>{subwork.get('breadth', 0)}</td>
@@ -275,8 +299,11 @@ def generate_pdf_subwork():
             <td><strong>Rs. {(total_quantity-reduction_quantity)*rate:.2f}</strong></td>
         </tr>
      """
-    GD=f"{(total_quantity-reduction_quantity)*rate:.2f}"
-    GDNUM=num2words(GD)
+    # GD=f"{(total_quantity-reduction_quantity)*rate:.2f}"
+    # GDNUM=num2words(GD)
+    GD = (total_quantity - reduction_quantity) * rate  # Calculate the amount
+    GD_whole = int(GD)  # Convert to an integer to discard decimals
+    GDNUM = num2words(GD_whole)
     subworks_html = f"""
         <p>Default SFT: {default_sft}, Default CFT: {default_cft}</p>
         <table>
@@ -316,10 +343,8 @@ def generate_pdf_subwork():
         <body>
             <h1>{project_name}</h1>
             <h2>Work Name : {work}</h2>
-            <h2>SubWork Name : {subwork.get("name") }</h2>
-
-            <span>ABC Company </span>
-            <p><strong>Project Name:</strong> {project_name}</p>
+            <h2>SubWork Name : {nameofsubwork }</h2>
+            
             <p><strong>Client Name:</strong> {client_name}</p>
             <p><strong>Date:</strong> {datetime.now().strftime('%Y-%m-%d')}</p>
             {subworks_html}
@@ -421,7 +446,7 @@ def generate_xlsx_subwork():
 
             sheet.append([
                 idx,
-                subwork.get("name", "Unnamed"),
+                subwork.get("name", "-"),
                 subwork.get("number", 0),
                 subwork.get("length", 0),
                 subwork.get("breadth", 0),
